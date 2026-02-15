@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>YouTube Downloader</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+
+<div class="container">
+
+  <h1>Download YouTube Videos</h1>
+  <p class="subtitle">
+    Paste a YouTube URL and download your video in your preferred quality.
+  </p>
+
+  <!-- URL Input -->
+  <div class="url-box">
+    <input id="url" type="text" placeholder="Paste YouTube link here...">
+    <button onclick="startDownload()">Fetch Video</button>
+  </div>
+
+  <!-- Video Info Card (static for now) -->
+  <div class="card">
+    <h3>Video Information</h3>
+
+    <div class="video-info">
+      <div class="thumbnail"></div>
+      <div class="details">
+        <h4>Video Title</h4>
+        <p>Channel Name</p>
+        <p>Published: —</p>
+      </div>
+    </div>
+
+    <div class="quality-box">
+      <select id="resolution">
+        <option>Best</option>
+        <option>480P</option>
+        <option>720P</option>
+        <option>1080P</option>
+      </select>
+
+      <button class="download-btn" onclick="startDownload()">
+        Start Download
+      </button>
+    </div>
+  </div>
+
+  <!-- Download Progress -->
+  <div class="card">
+    <h3>Download Progress</h3>
+
+    <div class="progress-container">
+      <div id="bar" class="progress-bar"></div>
+    </div>
+
+    <p id="status" class="progress-text">Waiting…</p>
+  </div>
+
+</div>
+
+<script>
+async function startDownload() {
+  const url = document.getElementById("url").value;
+  const resolution = document.getElementById("resolution").value;
+
+  if (!url) {
+    alert("Please enter a YouTube URL");
+    return;
+  }
+
+  document.getElementById("status").innerText = "Starting download...";
+  document.getElementById("bar").style.width = "0%";
+
+  await fetch("/fetch", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      url: url,
+      resolution: resolution,
+      file_type: "mp4"
+    })
+  });
+
+  pollProgress();
+}
+
+async function pollProgress() {
+  const res = await fetch("/progress");
+  const data = await res.json();
+
+  if (data.percent !== undefined) {
+    document.getElementById("bar").style.width = data.percent + "%";
+    document.getElementById("status").innerText =
+      `${data.percent}% - ${data.speed} MB/s`;
+  }
+
+  if (data.done) {
+    document.getElementById("status").innerText = "Download complete ✅";
+    return;
+  }
+
+  setTimeout(pollProgress, 500);
+}
+</script>
+
+</body>
+</html>
